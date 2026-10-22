@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Buddy</title>
+<meta name="description" content="A voice-first university schedule assistant, built as a simulated Alexa+ experience.">
+<style>
+  :root {
+    --bg: #0b1220;
+    --panel: #121a2e;
+    --panel2: #19243d;
+    --text: #e8eefc;
+    --muted: #93a1c0;
+    --accent: #38bdf8;
+    --accent2: #818cf8;
+    --user: #1e3a5f;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(1200px 600px at 50% -10%, #17264a 0%, var(--bg) 60%);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+  }
+  .app {
+    width: 100%;
+    max-width: 720px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 12px;
+  }
+  header { text-align: center; padding-top: 4px; }
+  h1 { margin: 0; font-size: 1.5rem; letter-spacing: .3px; }
+  .tag { color: var(--muted); font-size: .85rem; margin-top: 2px; }
+  .badge {
+    display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px;
+    background: rgba(56,189,248,.12); color: var(--accent); font-size: .72rem; border: 1px solid rgba(56,189,248,.3);
+  }
+
+  .orb-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .orb {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: conic-gradient(from 0deg, var(--accent), var(--accent2), var(--accent));
+    box-shadow: 0 0 24px rgba(56,189,248,.35);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .orb.listening { animation: pulse 1s infinite; box-shadow: 0 0 36px rgba(56,189,248,.8); }
+  .orb.speaking { animation: spin 2.2s linear infinite, pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+  @keyframes spin { to { filter: hue-rotate(360deg); } }
+  #status { font-size: .8rem; color: var(--muted); height: 1em; }
+
+  #log {
+    flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+    padding: 12px; background: var(--panel); border-radius: 16px; border: 1px solid #22304f;
+  }
+  .bubble { max-width: 88%; padding: 10px 14px; border-radius: 16px; line-height: 1.45; font-size: .95rem; }
+  .bubble p { margin: 0; }
+  .bubble ul { margin: 8px 0 0; padding-left: 18px; }
+  .bubble li { margin: 3px 0; }
+  .bubble.bot { align-self: flex-start; background: var(--panel2); border-top-left-radius: 4px; }
+  .bubble.user { align-self: flex-end; background: var(--user); border-top-right-radius: 4px; }
+
+  #chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    background: transparent; color: var(--accent); border: 1px solid rgba(56,189,248,.4);
+    padding: 6px 12px; border-radius: 999px; font-size: .8rem; cursor: pointer;
+  }
+  .chip:hover { background: rgba(56,189,248,.12); }
+
+  form { display: flex; gap: 8px; }
+  #q {
+    flex: 1; padding: 12px 14px; border-radius: 12px; border: 1px solid #2a3a5e;
+    background: var(--panel); color: var(--text); font-size: 1rem; outline: none;
+  }
+  #q:focus { border-color: var(--accent); }
+  button.send, #mic {
+    border: 0; border-radius: 12px; padding: 0 16px; font-size: 1rem; cursor: pointer; color: #04121f;
+    background: linear-gradient(135deg, var(--accent), var(--accent2)); font-weight: 600;
+  }
+  #mic { width: 48px; font-size: 1.2rem; }
+  #mic.live { animation: pulse 1s infinite; }
+  #mic.off { opacity: .4; cursor: not-allowed; }
+
+  .opts { display: flex; gap: 14px; justify-content: center; align-items: center; color: var(--muted); font-size: .8rem; flex-wrap: wrap; }
+  .opts select { background: var(--panel); color: var(--text); border: 1px solid #2a3a5e; border-radius: 8px; padding: 3px 6px; }
+  footer { text-align: center; color: var(--muted); font-size: .72rem; padding-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Campus Buddy</h1>
+    <div class="tag">Ask about your classes, assignments and exams, by voice or text.</div>
+    <span class="badge">Simulated Alexa+ experience</span>
+  </header>
+
+  <div class="orb-wrap">
+    <div id="orb" class="orb idle" aria-hidden="true"></div>
+    <div id="status" aria-live="polite">Ready</div>
+  </div>
+
+  <div id="log" aria-live="polite"></div>
+
+  <div id="chips"></div>
+
+  <form id="form" autocomplete="off">
+    <button id="mic" type="button" title="Tap to speak" aria-label="Speak">🎤</button>
+    <input id="q" type="text" placeholder="Ask me anything about your schedule..." aria-label="Your question">
+    <button class="send" type="submit">Ask</button>
+  </form>
+
+  <div class="opts">
+    <label><input id="voice" type="checkbox" checked> Spoken replies</label>
+    <label>Mic language
+      <select id="lang">
+        <option value="en-US">English</option>
+        <option value="bn-BD">বাংলা</option>
+      </select>
+    </label>
+  </div>
+
+  <footer>Demo data shown is sample data. Edit <code>data.js</code> to use your own schedule.</footer>
+</div>
+
+<script src="data.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
