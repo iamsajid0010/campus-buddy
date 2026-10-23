@@ -5,110 +5,241 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Campus Buddy</title>
 <meta name="description" content="A voice-first university schedule assistant, built as a simulated Alexa+ experience.">
+<meta name="theme-color" content="#0f211c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0b1220;
-    --panel: #121a2e;
-    --panel2: #19243d;
-    --text: #e8eefc;
-    --muted: #93a1c0;
-    --accent: #38bdf8;
-    --accent2: #818cf8;
-    --user: #1e3a5f;
+    --wall: #0f211c;
+    --board: #17352d;
+    --board-deep: #112a23;
+    --chalk: #f2efe4;
+    --chalk-dim: #aebdb1;
+    --yellow: #f6d365;
+    --coral: #ff8f78;
+    --mint: #8fe0bd;
+    --paper: #f4efe1;
+    --ink: #20231f;
+    --wood: #7a5338;
+    --wood-dark: #5a3b27;
+    --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+    --body: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
   * { box-sizing: border-box; }
-  html, body { height: 100%; }
+  html, body { margin: 0; }
   body {
-    margin: 0;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: radial-gradient(1200px 600px at 50% -10%, #17264a 0%, var(--bg) 60%);
-    color: var(--text);
-    display: flex;
-    justify-content: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    font-family: var(--body);
+    color: var(--chalk);
+    background:
+      radial-gradient(900px 500px at 15% -10%, rgba(143,224,189,.10), transparent 60%),
+      radial-gradient(800px 500px at 100% 110%, rgba(246,211,101,.07), transparent 60%),
+      var(--wall);
   }
-  .app {
-    width: 100%;
-    max-width: 720px;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    gap: 12px;
+  :focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
+
+  /* ---------- Opening page ---------- */
+  #splash {
+    position: fixed; inset: 0; z-index: 50;
+    display: grid; place-items: center; padding: 24px;
+    background:
+      radial-gradient(700px 420px at 50% 40%, rgba(143,224,189,.10), transparent 65%),
+      var(--board);
+    animation: splashAuto .8s ease 9s forwards;
   }
-  header { text-align: center; padding-top: 4px; }
-  h1 { margin: 0; font-size: 1.5rem; letter-spacing: .3px; }
-  .tag { color: var(--muted); font-size: .85rem; margin-top: 2px; }
-  .badge {
-    display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px;
-    background: rgba(56,189,248,.12); color: var(--accent); font-size: .72rem; border: 1px solid rgba(56,189,248,.3);
+  #splash.out { animation: none; transform: translateY(-104%); transition: transform .9s cubic-bezier(.7, 0, .2, 1); }
+  .splash-inner { width: min(640px, 100%); text-align: center; }
+  .wave { width: min(420px, 80vw); height: auto; display: block; margin: 0 auto 10px; overflow: visible; }
+  .wave path, .scribble path {
+    fill: none; stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 1; stroke-dashoffset: 1;
+  }
+  .wave path { stroke: var(--yellow); stroke-width: 5; animation: draw 1.7s cubic-bezier(.5, 0, .2, 1) .2s forwards; }
+  .splash-title {
+    margin: 4px 0 0; font-family: var(--display); font-weight: 800;
+    font-size: clamp(2.3rem, 9.5vw, 5.4rem); line-height: 1.02; letter-spacing: -.02em; color: var(--chalk);
+    white-space: nowrap;
+  }
+  .splash-title .ch { display: inline-block; white-space: pre; clip-path: inset(-10% 100% -30% -5%); animation: write .5s ease forwards; animation-delay: calc(1s + var(--i) * .07s); }
+  .scribble { width: min(360px, 70vw); height: 14px; display: block; margin: 12px auto 0; overflow: visible; }
+  .scribble path { stroke: var(--coral); stroke-width: 4; animation: draw .8s ease 2.2s forwards; }
+  .splash-tag { margin: 18px auto 0; max-width: 30ch; color: var(--chalk-dim); font-size: 1.05rem; line-height: 1.5; opacity: 0; animation: rise .7s ease 2.7s forwards; }
+  #enter {
+    margin-top: 26px; padding: 13px 30px; border: 0; border-radius: 999px; cursor: pointer;
+    font-family: var(--display); font-weight: 800; font-size: 1.05rem; color: var(--ink); background: var(--yellow);
+    box-shadow: 0 4px 0 #b9973a; opacity: 0; animation: rise .6s ease 3.1s forwards;
+    transition: transform .15s, box-shadow .15s;
+  }
+  #enter:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #b9973a; }
+  #enter:active { transform: translateY(3px); box-shadow: 0 1px 0 #b9973a; }
+
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes write { to { clip-path: inset(-10% -5% -30% -5%); } }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes splashAuto { to { transform: translateY(-104%); visibility: hidden; } }
+
+  /* ---------- App ---------- */
+  .app { width: 100%; max-width: 800px; margin: 0 auto; padding: 22px 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .brand h1 { margin: 0; font-family: var(--display); font-weight: 800; font-size: clamp(1.9rem, 6vw, 2.6rem); letter-spacing: -.02em; line-height: 1; }
+  .brand p { margin: 6px 0 0; color: var(--chalk-dim); font-size: .95rem; max-width: 46ch; }
+  .meta { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  #clock { font-family: var(--display); font-weight: 500; font-size: 1.05rem; color: var(--chalk); }
+  .badge { font-size: .78rem; color: var(--mint); border: 1.5px solid rgba(143,224,189,.5); border-radius: 999px; padding: 3px 11px; }
+
+  /* The timetable slip pinned to the board */
+  .slip {
+    position: relative; align-self: flex-start; max-width: min(520px, 100%);
+    background: var(--paper); color: var(--ink); border-radius: 3px;
+    padding: 14px 18px 14px; margin-top: 8px;
+    box-shadow: 0 10px 24px rgba(0,0,0,.35); transform: rotate(-1.2deg);
+  }
+  .slip::before {
+    content: ""; position: absolute; top: -11px; left: 50%; width: 76px; height: 22px; transform: translateX(-50%) rotate(2deg);
+    background: rgba(246,211,101,.75); border-radius: 2px;
+  }
+  .slip b { display: block; font-family: var(--display); font-weight: 800; font-size: 1.05rem; margin-bottom: 3px; }
+  .slip span { font-size: .98rem; line-height: 1.45; }
+  body.ready .slip { animation: pin .8s cubic-bezier(.3, 1.5, .5, 1) .15s both; }
+  @keyframes pin {
+    from { opacity: 0; transform: translateY(-46px) rotate(-7deg); }
+    to { opacity: 1; transform: rotate(-1.2deg); }
   }
 
-  .orb-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .orb {
-    width: 64px; height: 64px; border-radius: 50%;
-    background: conic-gradient(from 0deg, var(--accent), var(--accent2), var(--accent));
-    box-shadow: 0 0 24px rgba(56,189,248,.35);
-    transition: transform .2s, box-shadow .2s;
+  /* The board */
+  .board {
+    position: relative; height: clamp(340px, 52vh, 560px); height: clamp(340px, 52dvh, 560px);
+    display: flex; flex-direction: column; border-radius: 10px;
+    background:
+      radial-gradient(500px 220px at 20% 0%, rgba(255,255,255,.06), transparent 70%),
+      radial-gradient(420px 260px at 90% 100%, rgba(255,255,255,.04), transparent 70%),
+      var(--board);
+    border: 9px solid var(--wood);
+    box-shadow: inset 0 0 0 2px var(--wood-dark), inset 0 8px 30px rgba(0,0,0,.35), 0 14px 30px rgba(0,0,0,.35);
   }
-  .orb.listening { animation: pulse 1s infinite; box-shadow: 0 0 36px rgba(56,189,248,.8); }
-  .orb.speaking { animation: spin 2.2s linear infinite, pulse 1.4s infinite; }
-  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
-  @keyframes spin { to { filter: hue-rotate(360deg); } }
-  #status { font-size: .8rem; color: var(--muted); height: 1em; }
+  .board-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px 6px; }
+  #status { font-size: .88rem; color: var(--chalk-dim); }
+
+  /* Voice bars: chalk marks that move with what the assistant is doing */
+  .orb { display: flex; align-items: center; gap: 4px; height: 30px; }
+  .orb i { display: block; width: 5px; height: 8px; border-radius: 3px; background: var(--yellow); transform-origin: center; }
+  .orb i:nth-child(2n) { background: var(--mint); }
+  .orb i:nth-child(3n) { background: var(--coral); }
+  .orb.idle i { animation: breathe 3.2s ease-in-out infinite; animation-delay: calc(var(--k) * .25s); }
+  .orb.listening i { animation: talk .55s ease-in-out infinite; animation-delay: calc(var(--k) * .07s); }
+  .orb.speaking i { animation: talk .9s ease-in-out infinite; animation-delay: calc(var(--k) * .11s); }
+  .orb.thinking i { animation: sweep 1s ease-in-out infinite; animation-delay: calc(var(--k) * .1s); }
+  @keyframes breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.8); } }
+  @keyframes talk { 0%, 100% { transform: scaleY(.6); } 50% { transform: scaleY(3.2); } }
+  @keyframes sweep { 0%, 100% { transform: scaleY(1); opacity: .5; } 50% { transform: scaleY(2.6); opacity: 1; } }
 
   #log {
-    flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
-    padding: 12px; background: var(--panel); border-radius: 16px; border: 1px solid #22304f;
+    flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+    padding: 10px 16px 16px; scrollbar-width: thin; scrollbar-color: rgba(242,239,228,.3) transparent;
   }
-  .bubble { max-width: 88%; padding: 10px 14px; border-radius: 16px; line-height: 1.45; font-size: .95rem; }
+  .bubble { max-width: 90%; padding: 11px 15px; line-height: 1.5; font-size: .98rem; animation: pop .35s cubic-bezier(.3, 1.4, .5, 1) both; }
   .bubble p { margin: 0; }
   .bubble ul { margin: 8px 0 0; padding-left: 18px; }
-  .bubble li { margin: 3px 0; }
-  .bubble.bot { align-self: flex-start; background: var(--panel2); border-top-left-radius: 4px; }
-  .bubble.user { align-self: flex-end; background: var(--user); border-top-right-radius: 4px; }
+  .bubble li { margin: 5px 0; animation: rise .4s ease both; animation-delay: calc(var(--n) * 90ms + 120ms); }
+  .bubble.bot { align-self: flex-start; border: 1.5px solid rgba(242,239,228,.4); background: rgba(242,239,228,.05); border-radius: 18px 18px 18px 4px; }
+  .bubble.user { align-self: flex-end; background: var(--yellow); color: var(--ink); font-weight: 500; border-radius: 18px 18px 4px 18px; }
+  .bubble.typing { display: flex; gap: 5px; padding: 15px 16px; }
+  .bubble.typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--chalk); animation: dot 1s ease-in-out infinite; }
+  .bubble.typing span:nth-child(2) { animation-delay: .15s; }
+  .bubble.typing span:nth-child(3) { animation-delay: .3s; }
+  @keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
+  @keyframes dot { 0%, 100% { transform: translateY(0); opacity: .4; } 50% { transform: translateY(-5px); opacity: 1; } }
 
+  /* Chalk ledge: suggestions */
+  .ledge { background: linear-gradient(var(--wood), var(--wood-dark)); border-radius: 0 0 8px 8px; margin-top: -14px; padding: 16px 12px 12px; box-shadow: 0 6px 14px rgba(0,0,0,.3); }
   #chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
-    background: transparent; color: var(--accent); border: 1px solid rgba(56,189,248,.4);
-    padding: 6px 12px; border-radius: 999px; font-size: .8rem; cursor: pointer;
+    cursor: pointer; font: 500 .84rem/1.25 var(--body); color: var(--chalk); text-align: left;
+    background: rgba(15,33,28,.55); border: 1.5px solid rgba(242,239,228,.45); border-radius: 12px; padding: 7px 12px;
+    transition: transform .15s, background .15s, border-color .15s, color .15s;
   }
-  .chip:hover { background: rgba(56,189,248,.12); }
+  .chip:nth-child(3n+1):hover { border-color: var(--yellow); color: var(--yellow); }
+  .chip:nth-child(3n+2):hover { border-color: var(--mint); color: var(--mint); }
+  .chip:nth-child(3n):hover { border-color: var(--coral); color: var(--coral); }
+  .chip:hover { transform: translateY(-3px) rotate(-.8deg); background: rgba(15,33,28,.85); }
 
-  form { display: flex; gap: 8px; }
+  form { display: flex; gap: 8px; align-items: stretch; }
   #q {
-    flex: 1; padding: 12px 14px; border-radius: 12px; border: 1px solid #2a3a5e;
-    background: var(--panel); color: var(--text); font-size: 1rem; outline: none;
+    flex: 1; min-width: 0; padding: 13px 15px; border-radius: 12px; font: 400 1rem var(--body); color: var(--chalk);
+    background: rgba(0,0,0,.28); border: 1.5px solid rgba(242,239,228,.4);
   }
-  #q:focus { border-color: var(--accent); }
-  button.send, #mic {
-    border: 0; border-radius: 12px; padding: 0 16px; font-size: 1rem; cursor: pointer; color: #04121f;
-    background: linear-gradient(135deg, var(--accent), var(--accent2)); font-weight: 600;
+  #q::placeholder { color: var(--chalk-dim); }
+  #q:focus { outline: none; border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(246,211,101,.25); }
+  .send, #mic { border: 0; cursor: pointer; border-radius: 12px; font-family: var(--display); font-weight: 800; transition: transform .15s; }
+  .send { padding: 0 20px; background: var(--yellow); color: var(--ink); font-size: 1rem; }
+  #mic { position: relative; width: 50px; background: var(--coral); color: var(--ink); font-size: 1.25rem; }
+  .send:hover, #mic:hover { transform: translateY(-2px); }
+  #mic.live::after, #mic.live::before {
+    content: ""; position: absolute; inset: 0; border-radius: 12px; border: 2px solid var(--coral); animation: ring 1.3s ease-out infinite;
   }
-  #mic { width: 48px; font-size: 1.2rem; }
-  #mic.live { animation: pulse 1s infinite; }
+  #mic.live::before { animation-delay: .6s; }
+  @keyframes ring { from { transform: scale(1); opacity: .9; } to { transform: scale(1.7); opacity: 0; } }
   #mic.off { opacity: .4; cursor: not-allowed; }
 
-  .opts { display: flex; gap: 14px; justify-content: center; align-items: center; color: var(--muted); font-size: .8rem; flex-wrap: wrap; }
-  .opts select { background: var(--panel); color: var(--text); border: 1px solid #2a3a5e; border-radius: 8px; padding: 3px 6px; }
-  footer { text-align: center; color: var(--muted); font-size: .72rem; padding-bottom: 4px; }
+  .opts { display: flex; gap: 16px; justify-content: center; align-items: center; color: var(--chalk-dim); font-size: .84rem; flex-wrap: wrap; }
+  .opts select { background: var(--board-deep); color: var(--chalk); border: 1.5px solid rgba(242,239,228,.35); border-radius: 8px; padding: 4px 8px; font: inherit; }
+  footer { text-align: center; color: var(--chalk-dim); font-size: .78rem; }
+  footer code { color: var(--chalk); }
+
+  @media (max-width: 520px) {
+    .meta { align-items: flex-start; }
+    .board { border-width: 6px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; transition-duration: .01ms !important; }
+    #splash.out { transition: none; }
+  }
 </style>
 </head>
 <body>
+
+<div id="splash" role="dialog" aria-label="Welcome to Campus Buddy">
+  <div class="splash-inner">
+    <svg class="wave" viewBox="0 0 400 80" aria-hidden="true">
+      <path pathLength="1" d="M4 40 C 30 40, 34 12, 52 12 S 74 68, 92 68 S 114 4, 134 4 S 156 76, 176 76 S 198 16, 220 16 S 242 64, 262 64 S 286 28, 306 28 S 330 46, 350 46 S 380 40, 396 40"/>
+    </svg>
+    <h2 class="splash-title" id="splashTitle">Campus Buddy</h2>
+    <svg class="scribble" viewBox="0 0 400 14" preserveAspectRatio="none" aria-hidden="true">
+      <path pathLength="1" d="M4 9 C 60 2, 120 13, 180 6 S 300 12, 396 4"/>
+    </svg>
+    <p class="splash-tag">Ask about your classes, exams and campus events. Just say it.</p>
+    <button id="enter" type="button">Start talking</button>
+  </div>
+</div>
+
 <div class="app">
   <header>
-    <h1>Campus Buddy</h1>
-    <div class="tag">Ask about your classes, assignments, exams and campus events, by voice or text.</div>
-    <span class="badge">Simulated Alexa+ experience</span>
+    <div class="brand">
+      <h1>Campus Buddy</h1>
+      <p>Ask about your classes, assignments, exams and campus events, by voice or text.</p>
+    </div>
+    <div class="meta">
+      <div id="clock" aria-live="off"></div>
+      <span class="badge">Simulated Alexa+ experience</span>
+    </div>
   </header>
 
-  <div class="orb-wrap">
-    <div id="orb" class="orb idle" aria-hidden="true"></div>
-    <div id="status" aria-live="polite">Ready</div>
-  </div>
+  <div class="slip" id="nextup"><b>Next up</b><span id="nextText">Checking your routine...</span></div>
 
-  <div id="log" aria-live="polite"></div>
+  <section class="board" aria-label="Conversation">
+    <div class="board-head">
+      <div id="orb" class="orb idle" aria-hidden="true">
+        <i style="--k:0"></i><i style="--k:1"></i><i style="--k:2"></i><i style="--k:3"></i><i style="--k:4"></i><i style="--k:5"></i><i style="--k:6"></i>
+      </div>
+      <div id="status" aria-live="polite">Ready</div>
+    </div>
+    <div id="log" aria-live="polite"></div>
+  </section>
 
-  <div id="chips"></div>
+  <div class="ledge"><div id="chips"></div></div>
 
   <form id="form" autocomplete="off">
     <button id="mic" type="button" title="Tap to speak" aria-label="Speak">🎤</button>
@@ -126,7 +257,7 @@
     </label>
   </div>
 
-  <footer>Demo data shown is sample data. Edit <code>data.js</code> to use your own schedule.</footer>
+  <footer>Assignments, exams and events shown are sample data. Edit <code>data.js</code> to use your own.</footer>
 </div>
 
 <script src="data.js"></script>

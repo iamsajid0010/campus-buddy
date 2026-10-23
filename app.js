@@ -1,4 +1,4 @@
-// Campus Buddy - the interface: chat bubbles, microphone, and spoken replies.
+// Campus Buddy - the interface: opening page, chat, microphone, and spoken replies.
 (function () {
   "use strict";
 
@@ -13,6 +13,11 @@
   const voiceToggle = document.getElementById("voice");
   const langSel = document.getElementById("lang");
   const chips = document.getElementById("chips");
+  const clock = document.getElementById("clock");
+  const nextText = document.getElementById("nextText");
+  const splash = document.getElementById("splash");
+  const enterBtn = document.getElementById("enter");
+  const splashTitle = document.getElementById("splashTitle");
 
   const SUGGESTIONS = [
     "When is my next class?",
@@ -26,6 +31,45 @@
     "Where is the Tech Talk being held?"
   ];
 
+  // ---- Opening page ----
+  // Split the title into letters so each one can be "written" in turn.
+  if (splashTitle) {
+    const text = splashTitle.textContent;
+    splashTitle.setAttribute("aria-label", text);
+    splashTitle.textContent = "";
+    Array.from(text).forEach((c, i) => {
+      const s = document.createElement("span");
+      s.className = "ch";
+      s.setAttribute("aria-hidden", "true");
+      s.style.setProperty("--i", i);
+      s.textContent = c;
+      splashTitle.appendChild(s);
+    });
+  }
+
+  let splashClosed = false;
+  function closeSplash() {
+    if (splashClosed || !splash) return;
+    splashClosed = true;
+    splash.classList.add("out");
+    document.body.classList.add("ready");
+    setTimeout(() => { splash.remove(); }, 1000);
+  }
+  if (enterBtn) enterBtn.addEventListener("click", closeSplash);
+  document.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === "Escape") closeSplash(); });
+  setTimeout(closeSplash, 7000);
+  if (!splash) document.body.classList.add("ready");
+
+  // ---- Clock and "Next up" slip ----
+  function tick() {
+    const now = new Date();
+    clock.textContent = now.toLocaleString("en-US", { weekday: "long", hour: "numeric", minute: "2-digit" });
+    nextText.textContent = engine.answer("next class", now).say;
+  }
+  tick();
+  setInterval(tick, 30000);
+
+  // ---- Chat ----
   function setState(state, text) {
     orb.className = "orb " + state;
     status.textContent = text;
@@ -39,15 +83,27 @@
     row.appendChild(p);
     if (items && items.length) {
       const ul = document.createElement("ul");
-      items.forEach((t) => {
+      items.forEach((t, n) => {
         const li = document.createElement("li");
         li.textContent = t;
+        li.style.setProperty("--n", n);
         ul.appendChild(li);
       });
       row.appendChild(ul);
     }
     log.appendChild(row);
     log.scrollTop = log.scrollHeight;
+    return row;
+  }
+
+  function addTyping() {
+    const row = document.createElement("div");
+    row.className = "bubble bot typing";
+    row.setAttribute("aria-label", "Campus Buddy is thinking");
+    row.innerHTML = "<span></span><span></span><span></span>";
+    log.appendChild(row);
+    log.scrollTop = log.scrollHeight;
+    return row;
   }
 
   function speak(text) {
@@ -65,10 +121,15 @@
     text = text.trim();
     if (!text) return;
     addBubble("user", text);
-    const res = engine.answer(text);
-    addBubble("bot", res.say, res.items);
-    // Read the sentence plus up to 4 list items aloud
-    speak([res.say].concat(res.items.slice(0, 4)).join(". "));
+    const typing = addTyping();
+    setState("thinking", "Thinking...");
+    setTimeout(() => {
+      typing.remove();
+      const res = engine.answer(text);
+      addBubble("bot", res.say, res.items);
+      // Read the sentence plus up to 4 list items aloud
+      speak([res.say].concat(res.items.slice(0, 4)).join(". "));
+    }, 650);
   }
 
   form.addEventListener("submit", (e) => {
@@ -104,7 +165,7 @@
       rec.maxAlternatives = 1;
       rec.onstart = () => { listening = true; micBtn.classList.add("live"); setState("listening", "Listening..."); };
       rec.onend = () => { listening = false; micBtn.classList.remove("live"); if (orb.classList.contains("listening")) setState("idle", "Ready"); };
-      rec.onerror = (e) => { setState("idle", e.error === "not-allowed" ? "Microphone blocked" : "Ready"); };
+      rec.onerror = (e) => { setState("idle", e.error === "not-allowed" ? "Microphone blocked. Allow it in the address bar." : "Ready"); };
       rec.onresult = (e) => ask(e.results[0][0].transcript);
       rec.start();
     });
@@ -113,5 +174,6 @@
   // Welcome message (no auto-speech: browsers block that until you click)
   const hi = engine.answer("help");
   addBubble("bot", hi.say, hi.items);
+  log.scrollTop = 0;
   setState("idle", "Ready");
 })();
