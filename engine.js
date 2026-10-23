@@ -83,8 +83,9 @@
             "When is my next class?",
             "What classes do I have tomorrow?",
             "Which assignments are due this week?",
-            "Where is CSE221?",
-            "When is my next exam?"
+            "Where is the Object Oriented Programming class held?",
+            "When is my next exam?",
+            "What events are coming up?"
           ]
         };
       }
@@ -157,12 +158,81 @@
       function courseInfo(course, mode) {
         const meets = D.classes.filter((c) => c.code === course.code).sort((a, b) => a.day - b.day);
         if (mode === "teacher") {
-          return { say: course.name + " is taught by " + (course.teacher || "an instructor I don't have on file") + ".", items: [] };
+          return { say: course.name + " (" + course.code + ") is taught by " + (course.teacher || "an instructor I don't have on file") + ".", items: [] };
         }
         if (!meets.length) return { say: "I don't have any class times for " + course.name + ".", items: [] };
         return {
           say: course.name + " meets " + plural(meets.length, "time") + " a week:",
           items: meets.map((c) => DAYS[c.day] + ", " + fmtTime(c.start) + " to " + fmtTime(c.end) + ", Room " + c.room)
+        };
+      }
+
+      // ---- Campus events (seminars, hackathons, workshops...) ----
+      function findEvent() {
+        let best = null, bestLen = 0;
+        (D.events || []).forEach((e) => {
+          [e.title].concat(e.aliases || []).forEach((k) => {
+            k = k.toLowerCase();
+            if (q.includes(k) && k.length > bestLen) { best = e; bestLen = k.length; }
+          });
+        });
+        return best;
+      }
+
+      // Classes that overlap with an event (so we can warn about a clash)
+      function clashes(e) {
+        const d = new Date(e.when);
+        const s = d.getHours() * 60 + d.getMinutes();
+        const ed = e.end ? new Date(e.end) : null;
+        const en = ed && startOfDay(ed).getTime() === startOfDay(d).getTime() ? ed.getHours() * 60 + ed.getMinutes() : s + 120;
+        return classesOn(d.getDay()).filter((c) => toMin(c.start) < en && toMin(c.end) > s);
+      }
+
+      const eventLine = (x) => {
+        const c = clashes(x.e);
+        return x.e.title + " (" + x.e.type + "), " + whenLabel(x.d) + ", " + x.e.venue +
+          (c.length ? " (clashes with your " + c.map((k) => cname(k.code)).join(" and ") + ")" : "");
+      };
+
+      function eventsAnswer(ev, ref) {
+        if (ev) {
+          const d = new Date(ev.when);
+          const c = clashes(ev);
+          const items = [];
+          if (ev.organizer) items.push("Organized by " + ev.organizer);
+          if (ev.about) items.push(ev.about);
+          if (c.length) items.push("Heads up: this clashes with your " + c.map((k) => cname(k.code)).join(" and "));
+          return {
+            say: ev.title + " (" + ev.type + ") is " + whenLabel(d) + " at " + ev.venue + ".",
+            items: items
+          };
+        }
+        let list = (D.events || []).map((e) => ({ e: e, d: new Date(e.when) }))
+          .filter((x) => x.d >= now).sort((a, b) => a.d - b.d);
+
+        const types = [["seminar", "seminar"], ["talk", "seminar"], ["webinar", "seminar"], ["hackathon", "hackathon"],
+          ["workshop", "workshop"], ["bootcamp", "workshop"], ["contest", "contest"], ["competition", "contest"], ["fest", "fest"]];
+        const t = types.find((p) => q.includes(p[0]));
+        if (t) list = list.filter((x) => x.e.type.toLowerCase().includes(t[1]));
+
+        let scope = "coming up";
+        if (ref && (ref.label === "today" || ref.label === "tomorrow")) {
+          list = list.filter((x) => dayDiff(x.d) === ref.offset); scope = ref.label;
+        } else if (ref) {
+          list = list.filter((x) => dayDiff(x.d) === ref.offset); scope = "on " + ref.label;
+        } else if (has("next week")) {
+          list = list.filter((x) => dayDiff(x.d) >= 7 && dayDiff(x.d) < 14); scope = "next week";
+        } else if (has("this week")) {
+          list = list.filter((x) => dayDiff(x.d) < 7); scope = "this week";
+        } else if (has("this month")) {
+          list = list.filter((x) => x.d.getMonth() === now.getMonth() && x.d.getFullYear() === now.getFullYear()); scope = "this month";
+        }
+        const noun = t ? t[1] + (t[1] === "fest" ? "s" : "s") : "event";
+        if (!list.length) return { say: "I don't see any " + (t ? t[1] + "s" : "events") + " " + scope + ".", items: [] };
+        list = list.slice(0, 6);
+        return {
+          say: "There " + (list.length === 1 ? "is 1 " + (t ? t[1] : "event") : "are " + list.length + " " + (t ? noun : "events")) + " " + scope + ":",
+          items: list.map(eventLine)
         };
       }
 
@@ -172,6 +242,10 @@
 
       const course = findCourse();
       const ref = dayRef();
+
+      const ev = findEvent();
+      if (ev || has("event", "seminar", "hackathon", "workshop", "contest", "competition", "webinar", "bootcamp", "fest",
+        "what's on", "whats on", "ইভেন্ট", "সেমিনার", "হ্যাকাথন", "কর্মশালা", "প্রতিযোগিতা")) return eventsAnswer(ev, ref);
 
       if (has("exam", "midterm", "final", "পরীক্ষা")) return exams(course);
       if (has("assignment", "homework", "due", "deadline", "submit", "submission", "অ্যাসাইনমেন্ট", "এসাইনমেন্ট", "জমা"))

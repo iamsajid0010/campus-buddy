@@ -8,17 +8,26 @@ Students can ask, by voice or text:
 - "When is my next class?"
 - "What classes do I have tomorrow?"
 - "Which assignments are due this week?"
-- "Where is CSE221?"
-- "Who teaches CSE215?"
+- "Where is the Object Oriented Programming class held?"
+- "Who is the instructor for Electronic Devices and Circuits?"
 - "When is my next exam?"
+- "What events are coming up?"
+- "Are there any hackathons this month?"
+- "Where is the Tech Talk being held?"
+
+**Campus events:** it also answers questions about seminars, workshops, contests, hackathons and
+fests: when, where, who organizes them. It checks each event against the student's class routine
+and warns about clashes, e.g. "clashes with your Electronic Devices and Circuits Lab".
 
 ## Project description
 
 Campus Buddy is a conversational schedule assistant for university students, built as a simulated
 Alexa+ experience in a web app. Instead of opening a portal or scrolling through screenshots of a
 routine, a student simply asks, "When is my next class?" or "Which assignments are due this week?",
-and the assistant answers out loud with the time, room, and teacher. It understands questions about
-classes, assignments, exams, rooms and instructors in English, and recognizes common Bangla keywords.
+and the assistant answers out loud with the time, room, and teacher. It also tracks campus events
+such as tech seminars, workshops, contests and hackathons, tells students when and where they are,
+and warns them when an event clashes with one of their classes. It understands questions about
+classes, assignments, exams, events, rooms and instructors in English, and recognizes common Bangla keywords.
 All schedule data lives in a single editable data file, so any student can make it their own in
 minutes, with no database or account. Campus Buddy shows how a voice assistant can remove everyday
 friction for students who juggle many classes and deadlines.
@@ -30,7 +39,8 @@ friction for students who juggle many classes and deadlines.
   and spoken replies (speech synthesis).
 - `engine.js` - the assistant's logic. Understands a question with keyword and intent matching, then
   looks up the answer in the data and builds a spoken reply.
-- `data.js` - **your schedule** (classes, assignments, exams). Sample data is included.
+- `data.js` - **your schedule** (classes, assignments, exams, campus events). The class routine comes
+  from a real department routine; assignments, exams and events are **sample data** to replace.
 
 No server, no database, no API keys. Everything runs in the browser.
 

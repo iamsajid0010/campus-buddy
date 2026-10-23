@@ -18,10 +18,12 @@
     "When is my next class?",
     "What classes do I have tomorrow?",
     "Which assignments are due this week?",
-    "What is due tomorrow?",
-    "Where is CSE221?",
-    "Who teaches CSE215?",
-    "When is my next exam?"
+    "Where is the Object Oriented Programming class held?",
+    "Who is the instructor for Electronic Devices and Circuits?",
+    "When is my next exam?",
+    "What events are coming up?",
+    "Are there any hackathons this month?",
+    "Where is the Tech Talk being held?"
   ];
 
   function setState(state, text) {
