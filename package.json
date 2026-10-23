@@ -1,0 +1,11 @@
+{
+  "name": "campus-buddy",
+  "version": "1.0.0",
+  "description": "Voice-first university schedule assistant (English and Bangla), a simulated Alexa+ experience with a self-hosted MCP server.",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test": "node test/engine.test.js",
+    "mcp": "cd mcp && npm start"
+  }
+}

@@ -19,17 +19,41 @@
   const enterBtn = document.getElementById("enter");
   const splashTitle = document.getElementById("splashTitle");
 
-  const SUGGESTIONS = [
-    "When is my next class?",
-    "What classes do I have tomorrow?",
-    "Which assignments are due this week?",
-    "Where is the Object Oriented Programming class held?",
-    "Who is the instructor for Electronic Devices and Circuits?",
-    "When is my next exam?",
-    "What events are coming up?",
-    "Are there any hackathons this month?",
-    "Where is the Tech Talk being held?"
-  ];
+  const SUGGESTIONS = {
+    en: [
+      "When is my next class?",
+      "What classes do I have tomorrow?",
+      "Which assignments are due this week?",
+      "Where is the Object Oriented Programming class held?",
+      "Who is the instructor for Electronic Devices and Circuits?",
+      "When is my next exam?",
+      "What events are coming up?",
+      "Are there any hackathons this month?",
+      "Where is the Tech Talk being held?"
+    ],
+    bn: [
+      "আমার পরের ক্লাস কখন?",
+      "কাল আমার কী কী ক্লাস আছে?",
+      "এই সপ্তাহে কোন অ্যাসাইনমেন্ট জমা দিতে হবে?",
+      "অবজেক্ট ওরিয়েন্টেড প্রোগ্রামিং ক্লাস কোথায় হয়?",
+      "ইলেকট্রনিক ডিভাইসেস অ্যান্ড সার্কিটস এর শিক্ষক কে?",
+      "আমার পরের পরীক্ষা কবে?",
+      "আসছে কী কী ইভেন্ট আছে?",
+      "এই মাসে কি কোনো হ্যাকাথন আছে?",
+      "টেক টক কোথায় হচ্ছে?"
+    ]
+  };
+
+  const STATUS = {
+    idle: ["Ready", "প্রস্তুত"],
+    thinking: ["Thinking...", "ভাবছি..."],
+    listening: ["Listening...", "শুনছি..."],
+    speaking: ["Speaking...", "বলছি..."]
+  };
+  const PLACEHOLDER = ["Ask me anything about your schedule...", "আপনার রুটিন নিয়ে যা খুশি জিজ্ঞেস করুন..."];
+
+  // The interface language follows the "Mic language" selector.
+  const uiLang = () => (langSel.value === "bn-BD" ? "bn" : "en");
 
   // ---- Opening page ----
   // Split the title into letters so each one can be "written" in turn.
@@ -63,16 +87,17 @@
   // ---- Clock and "Next up" slip ----
   function tick() {
     const now = new Date();
-    clock.textContent = now.toLocaleString("en-US", { weekday: "long", hour: "numeric", minute: "2-digit" });
-    nextText.textContent = engine.answer("next class", now).say;
+    const l = uiLang();
+    clock.textContent = now.toLocaleString(l === "bn" ? "bn-BD" : "en-US", { weekday: "long", hour: "numeric", minute: "2-digit" });
+    nextText.textContent = engine.answer("next class", now, l).say;
   }
   tick();
   setInterval(tick, 30000);
 
   // ---- Chat ----
-  function setState(state, text) {
+  function setState(state) {
     orb.className = "orb " + state;
-    status.textContent = text;
+    status.textContent = STATUS[state][uiLang() === "bn" ? 1 : 0];
   }
 
   function addBubble(who, text, items) {
@@ -106,14 +131,41 @@
     return row;
   }
 
-  function speak(text) {
-    if (!voiceToggle.checked || !("speechSynthesis" in window)) { setState("idle", "Ready"); return; }
+  // ---- Spoken replies (English and Bangla) ----
+  // Ask the browser to load its voice list early (Chrome fills it in asynchronously).
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.getVoices();
+    if (window.speechSynthesis.addEventListener) window.speechSynthesis.addEventListener("voiceschanged", () => {});
+  }
+  function pickVoice(code) {
+    const voices = window.speechSynthesis.getVoices() || [];
+    const want = code.toLowerCase(), base = want.split("-")[0];
+    const voice = voices.find((v) => v.lang.toLowerCase().replace("_", "-") === want) ||
+      voices.find((v) => v.lang.toLowerCase().replace("_", "-").split("-")[0] === base) || null;
+    return { voice: voice, loaded: voices.length > 0 };
+  }
+  let warnedNoBnVoice = false;
+
+  function speak(text, lang) {
+    if (!voiceToggle.checked || !("speechSynthesis" in window)) { setState("idle"); return; }
     window.speechSynthesis.cancel();
+    const code = lang === "bn" ? "bn-BD" : "en-US";
+    const picked = pickVoice(code);
+    if (lang === "bn" && picked.loaded && !picked.voice) {
+      // No Bangla voice installed: show the text and say so once, instead of reading Bangla with an English voice.
+      if (!warnedNoBnVoice) {
+        warnedNoBnVoice = true;
+        addBubble("bot", "এই ব্রাউজারে বাংলা ভয়েস নেই, তাই বাংলা উত্তর শুধু লেখায় দেখানো হচ্ছে। / No Bangla voice is installed in this browser, so Bangla replies are shown as text only. Microsoft Edge often includes one.");
+      }
+      setState("idle");
+      return;
+    }
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = "en-US";
-    u.onstart = () => setState("speaking", "Speaking...");
-    u.onend = () => setState("idle", "Ready");
-    u.onerror = () => setState("idle", "Ready");
+    u.lang = code;
+    if (picked.voice) u.voice = picked.voice;
+    u.onstart = () => setState("speaking");
+    u.onend = () => setState("idle");
+    u.onerror = () => setState("idle");
     window.speechSynthesis.speak(u);
   }
 
@@ -122,13 +174,14 @@
     if (!text) return;
     addBubble("user", text);
     const typing = addTyping();
-    setState("thinking", "Thinking...");
+    setState("thinking");
     setTimeout(() => {
       typing.remove();
-      const res = engine.answer(text);
+      // Reply in the language of the question: Bangla script in, Bangla out.
+      const res = engine.answer(text, undefined, engine.detectLang(text));
       addBubble("bot", res.say, res.items);
       // Read the sentence plus up to 4 list items aloud
-      speak([res.say].concat(res.items.slice(0, 4)).join(". "));
+      speak([res.say].concat(res.items.slice(0, 4)).join(". "), res.lang);
     }, 650);
   }
 
@@ -138,13 +191,28 @@
     input.value = "";
   });
 
-  SUGGESTIONS.forEach((s) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "chip";
-    b.textContent = s;
-    b.addEventListener("click", () => ask(s));
-    chips.appendChild(b);
+  function renderChips() {
+    chips.textContent = "";
+    SUGGESTIONS[uiLang()].forEach((s) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip";
+      b.textContent = s;
+      b.addEventListener("click", () => ask(s));
+      chips.appendChild(b);
+    });
+  }
+  renderChips();
+
+  // Switching the language switches the chips, the "Next up" slip and the greeting.
+  langSel.addEventListener("change", () => {
+    const l = uiLang();
+    input.placeholder = PLACEHOLDER[l === "bn" ? 1 : 0];
+    renderChips();
+    tick();
+    setState("idle");
+    const hi = engine.answer("help", undefined, l);
+    addBubble("bot", hi.say, hi.items);
   });
 
   // ---- Microphone (speech recognition) ----
@@ -172,17 +240,17 @@
         "network": "Speech recognition needs an internet connection. Check your connection and try again.",
         "language-not-supported": "This browser doesn't support that language for voice. Pick English, or type your question."
       };
-      rec.onstart = () => { listening = true; micBtn.classList.add("live"); setState("listening", "Listening..."); };
+      rec.onstart = () => { listening = true; micBtn.classList.add("live"); setState("listening"); };
       rec.onend = () => {
         listening = false; micBtn.classList.remove("live");
         if (!gotResult && !gotError) {
-          addBubble("bot", "I didn't catch that. Tap the microphone and try again.");
+          addBubble("bot", uiLang() === "bn" ? "আমি শুনতে পাইনি। মাইক্রোফোনে ট্যাপ করে আবার বলুন।" : "I didn't catch that. Tap the microphone and try again.");
         }
-        if (orb.classList.contains("listening")) setState("idle", "Ready");
+        if (orb.classList.contains("listening")) setState("idle");
       };
       rec.onerror = (e) => {
         gotError = true;
-        setState("idle", "Ready");
+        setState("idle");
         if (e.error !== "aborted") addBubble("bot", why[e.error] || ("Voice input stopped (" + e.error + "). You can type your question instead."));
       };
       rec.onresult = (e) => { gotResult = true; ask(e.results[0][0].transcript); };
@@ -191,8 +259,8 @@
   }
 
   // Welcome message (no auto-speech: browsers block that until you click)
-  const hi = engine.answer("help");
+  const hi = engine.answer("help", undefined, uiLang());
   addBubble("bot", hi.say, hi.items);
   log.scrollTop = 0;
-  setState("idle", "Ready");
+  setState("idle");
 })();
