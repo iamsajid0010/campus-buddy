@@ -40,11 +40,11 @@ window.CAMPUS_DATA = {
   // name: replace the code with the full course title if you like.
   // aliases = other ways you might say the course (useful for voice).
   courses: [
-    { code: "CSE221", name: "Object Oriented Programming", aliases: ["cse 221", "221", "oop", "object oriented"], teacher: "Md. Sazzadur Ahamed" },
-    { code: "CSE215", name: "Electronic Devices and Circuits", aliases: ["cse 215", "215", "edc", "electronic devices"], teacher: "Najeeb Ahmed Bhuiyan" },
-    { code: "AOL101", name: "Art of Living", aliases: ["aol 101", "aol", "101"], teacher: "Mahimul Islam Nadim" },
-    { code: "CSE222", name: "Object Oriented Programming Lab", aliases: ["cse 222", "222", "oop lab"], teacher: "Z N M Zarif Mahmud" },
-    { code: "CSE216", name: "Electronic Devices and Circuits Lab", aliases: ["cse 216", "216", "edc lab", "electronic devices lab"], teacher: "Najeeb Ahmed Bhuiyan" }
+    { code: "CSE221", name: "Object Oriented Programming", aliases: ["cse 221", "221", "oop", "object oriented", "ওওপি", "ও ও পি", "অবজেক্ট ওরিয়েন্টেড", "অবজেক্ট ওরিয়েন্টেড প্রোগ্রামিং"], teacher: "Md. Sazzadur Ahamed" },
+    { code: "CSE215", name: "Electronic Devices and Circuits", aliases: ["cse 215", "215", "edc", "electronic devices", "ইডিসি", "ইলেকট্রনিক ডিভাইস", "ইলেকট্রনিক ডিভাইসেস", "ইলেকট্রনিক ডিভাইসেস অ্যান্ড সার্কিটস"], teacher: "Najeeb Ahmed Bhuiyan" },
+    { code: "AOL101", name: "Art of Living", aliases: ["aol 101", "aol", "101", "আর্ট অফ লিভিং", "আর্ট অব লিভিং", "এওএল"], teacher: "Mahimul Islam Nadim" },
+    { code: "CSE222", name: "Object Oriented Programming Lab", aliases: ["cse 222", "222", "oop lab", "ওওপি ল্যাব", "অবজেক্ট ওরিয়েন্টেড প্রোগ্রামিং ল্যাব"], teacher: "Z N M Zarif Mahmud" },
+    { code: "CSE216", name: "Electronic Devices and Circuits Lab", aliases: ["cse 216", "216", "edc lab", "electronic devices lab", "ইডিসি ল্যাব", "ইলেকট্রনিক ডিভাইস ল্যাব", "ইলেকট্রনিক ডিভাইসেস অ্যান্ড সার্কিটস ল্যাব"], teacher: "Najeeb Ahmed Bhuiyan" }
   ],
 
   // Weekly class routine. "lab" marks the lab group (D1 / D2).
@@ -89,15 +89,15 @@ window.CAMPUS_DATA = {
   events: [
     { title: "Tech Talk: Careers in AI", type: "Seminar", when: nextDay(4, 0, "10:00"), end: nextDay(4, 0, "12:00"),
       venue: "Main Auditorium", organizer: "Department of CSE", about: "Industry speakers on AI careers.",
-      aliases: ["tech talk", "ai careers", "career talk", "ai seminar"] },
+      aliases: ["tech talk", "ai careers", "career talk", "ai seminar", "টেক টক", "এআই ক্যারিয়ার"] },
     { title: "Web Development Workshop", type: "Workshop", when: nextDay(3, 0, "11:00"), end: nextDay(3, 0, "13:00"),
       venue: "Computer Lab G1-014", organizer: "Programming Club", about: "Hands-on HTML, CSS and JavaScript.",
-      aliases: ["web workshop", "web dev workshop"] },
+      aliases: ["web workshop", "web dev workshop", "ওয়েব ডেভেলপমেন্ট ওয়ার্কশপ", "ওয়েব ওয়ার্কশপ"] },
     { title: "Intra-University Programming Contest", type: "Contest", when: nextDay(5, 1, "10:00"), end: nextDay(5, 1, "14:00"),
       venue: "Computer Lab G1-013", organizer: "Programming Club", about: "Team-based problem solving contest.",
-      aliases: ["programming contest", "coding contest"] },
+      aliases: ["programming contest", "coding contest", "প্রোগ্রামিং কনটেস্ট", "প্রোগ্রামিং প্রতিযোগিতা"] },
     { title: "Campus Hackathon 2026", type: "Hackathon", when: nextDay(6, 1, "09:00"), end: nextDay(6, 1, "18:00"),
       venue: "Innovation Lab", organizer: "Student Union", about: "One-day build challenge for student teams.",
-      aliases: ["campus hackathon"] }
+      aliases: ["campus hackathon", "ক্যাম্পাস হ্যাকাথন"] }
   ]
 };

@@ -163,10 +163,29 @@
       rec.lang = langSel.value;
       rec.interimResults = false;
       rec.maxAlternatives = 1;
+      let gotResult = false, gotError = false;
+      const why = {
+        "not-allowed": "The microphone is blocked. Click the lock icon in the address bar, allow the microphone, then try again.",
+        "service-not-allowed": "This browser blocked speech recognition. Open the site in Google Chrome or Microsoft Edge.",
+        "no-speech": "I didn't hear anything. Tap the microphone and speak after it starts listening.",
+        "audio-capture": "No microphone was found. Check that one is connected and not used by another app.",
+        "network": "Speech recognition needs an internet connection. Check your connection and try again.",
+        "language-not-supported": "This browser doesn't support that language for voice. Pick English, or type your question."
+      };
       rec.onstart = () => { listening = true; micBtn.classList.add("live"); setState("listening", "Listening..."); };
-      rec.onend = () => { listening = false; micBtn.classList.remove("live"); if (orb.classList.contains("listening")) setState("idle", "Ready"); };
-      rec.onerror = (e) => { setState("idle", e.error === "not-allowed" ? "Microphone blocked. Allow it in the address bar." : "Ready"); };
-      rec.onresult = (e) => ask(e.results[0][0].transcript);
+      rec.onend = () => {
+        listening = false; micBtn.classList.remove("live");
+        if (!gotResult && !gotError) {
+          addBubble("bot", "I didn't catch that. Tap the microphone and try again.");
+        }
+        if (orb.classList.contains("listening")) setState("idle", "Ready");
+      };
+      rec.onerror = (e) => {
+        gotError = true;
+        setState("idle", "Ready");
+        if (e.error !== "aborted") addBubble("bot", why[e.error] || ("Voice input stopped (" + e.error + "). You can type your question instead."));
+      };
+      rec.onresult = (e) => { gotResult = true; ask(e.results[0][0].transcript); };
       rec.start();
     });
   }

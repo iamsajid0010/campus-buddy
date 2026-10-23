@@ -3,7 +3,7 @@
   "use strict";
 
   const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  const BN_DAYS = { "রবিবার": 0, "সোমবার": 1, "মঙ্গলবার": 2, "বুধবার": 3, "বৃহস্পতিবার": 4, "শুক্রবার": 5, "শনিবার": 6 };
+  const BN_DAYS = { "রবিবার": 0, "রোববার": 0, "সোমবার": 1, "মঙ্গলবার": 2, "বুধবার": 3, "বৃহস্পতিবার": 4, "শুক্রবার": 5, "শনিবার": 6 };
 
   const pad = (n) => String(n).padStart(2, "0");
   const toMin = (t) => { const p = t.split(":").map(Number); return p[0] * 60 + p[1]; };
@@ -66,7 +66,9 @@
 
       function dayRef() {
         if (has("today", "আজ")) return { dow: todayDow, offset: 0, label: "today" };
-        if (has("tomorrow", "আগামীকাল", "আগামী কাল", "কাল")) return { dow: (todayDow + 1) % 7, offset: 1, label: "tomorrow" };
+        // "কাল" is also inside words like "সকাল", so match it only as a whole word
+        const words = q.split(/[\s,?!।.]+/);
+        if (has("tomorrow", "আগামীকাল", "আগামী কাল") || words.some((w) => w === "কাল" || w === "কালকে" || w === "কালকের")) return { dow: (todayDow + 1) % 7, offset: 1, label: "tomorrow" };
         for (let i = 0; i < 7; i++) {
           if (q.includes(DAYS[i].toLowerCase())) return { dow: i, offset: (i - todayDow + 7) % 7, label: DAYS[i] };
         }
@@ -211,7 +213,9 @@
           .filter((x) => x.d >= now).sort((a, b) => a.d - b.d);
 
         const types = [["seminar", "seminar"], ["talk", "seminar"], ["webinar", "seminar"], ["hackathon", "hackathon"],
-          ["workshop", "workshop"], ["bootcamp", "workshop"], ["contest", "contest"], ["competition", "contest"], ["fest", "fest"]];
+          ["workshop", "workshop"], ["bootcamp", "workshop"], ["contest", "contest"], ["competition", "contest"], ["fest", "fest"],
+          ["সেমিনার", "seminar"], ["হ্যাকাথন", "hackathon"], ["হ্যাকাথন", "hackathon"], ["ওয়ার্কশপ", "workshop"], ["কর্মশালা", "workshop"],
+          ["কনটেস্ট", "contest"], ["প্রতিযোগিতা", "contest"], ["ফেস্ট", "fest"]];
         const t = types.find((p) => q.includes(p[0]));
         if (t) list = list.filter((x) => x.e.type.toLowerCase().includes(t[1]));
 
@@ -220,11 +224,11 @@
           list = list.filter((x) => dayDiff(x.d) === ref.offset); scope = ref.label;
         } else if (ref) {
           list = list.filter((x) => dayDiff(x.d) === ref.offset); scope = "on " + ref.label;
-        } else if (has("next week")) {
+        } else if (has("next week", "পরের সপ্তাহ", "আগামী সপ্তাহ")) {
           list = list.filter((x) => dayDiff(x.d) >= 7 && dayDiff(x.d) < 14); scope = "next week";
-        } else if (has("this week")) {
+        } else if (has("this week", "এই সপ্তাহ", "সপ্তাহে")) {
           list = list.filter((x) => dayDiff(x.d) < 7); scope = "this week";
-        } else if (has("this month")) {
+        } else if (has("this month", "এই মাস")) {
           list = list.filter((x) => x.d.getMonth() === now.getMonth() && x.d.getFullYear() === now.getFullYear()); scope = "this month";
         }
         const noun = t ? t[1] + (t[1] === "fest" ? "s" : "s") : "event";
@@ -237,26 +241,29 @@
       }
 
       // ---- Understand the question (simple keyword matching) ----
-      if (!q || has("help", "what can you do", "সাহায্য")) return help();
-      if (/^(hi|hello|hey|salam|assalamu)/.test(q)) return help();
+      if (!q || has("help", "what can you do", "সাহায্য", "হেল্প")) return help();
+      if (/^(hi|hello|hey|salam|assalamu|হ্যালো|হাই|সালাম|আসসালামু)/.test(q)) return help();
 
       const course = findCourse();
       const ref = dayRef();
 
       const ev = findEvent();
       if (ev || has("event", "seminar", "hackathon", "workshop", "contest", "competition", "webinar", "bootcamp", "fest",
-        "what's on", "whats on", "ইভেন্ট", "সেমিনার", "হ্যাকাথন", "কর্মশালা", "প্রতিযোগিতা")) return eventsAnswer(ev, ref);
+        "what's on", "whats on", "ইভেন্ট", "সেমিনার", "হ্যাকাথন", "কর্মশালা", "ওয়ার্কশপ", "কনটেস্ট", "ফেস্ট", "প্রতিযোগিতা")) return eventsAnswer(ev, ref);
 
-      if (has("exam", "midterm", "final", "পরীক্ষা")) return exams(course);
-      if (has("assignment", "homework", "due", "deadline", "submit", "submission", "অ্যাসাইনমেন্ট", "এসাইনমেন্ট", "জমা"))
+      if (has("exam", "quiz", "midterm", "final", "পরীক্ষা", "এক্সাম", "কুইজ", "মিডটার্ম", "ফাইনাল")) return exams(course);
+      if (has("assignment", "homework", "due", "deadline", "submit", "submission", "অ্যাসাইনমেন্ট", "এসাইনমেন্ট", "এ্যাসাইনমেন্ট",
+        "হোমওয়ার্ক", "ডেডলাইন", "সাবমিশন", "জমা"))
         return assignments(course, ref);
-      if (course && has("teacher", "who teaches", "faculty", "instructor", "lecturer", "sir", "madam", "স্যার", "শিক্ষক"))
+      if (course && has("teacher", "who teaches", "faculty", "instructor", "lecturer", "sir", "madam", "স্যার", "ম্যাডাম", "ম্যাম",
+        "শিক্ষক", "টিচার", "পড়ান", "ফ্যাকাল্টি"))
         return courseInfo(course, "teacher");
-      if (course && has("where", "room", "location", "when", "time", "কোথায়", "রুম", "কখন")) return courseInfo(course, "where");
-      if (has("next class", "next lecture", "পরের ক্লাস", "পরবর্তী ক্লাস") || (has("next") && has("class", "lecture")))
+      if (course && has("where", "room", "location", "when", "time", "কোথায়", "রুম", "কখন", "কবে", "কয়টায়", "কটায়")) return courseInfo(course, "where");
+      if (has("next class", "next lecture", "পরের ক্লাস", "পরবর্তী ক্লাস", "পরের লেকচার") || (has("next") && has("class", "lecture"))
+        || (has("পরের", "পরবর্তী", "এরপর") && has("ক্লাস", "লেকচার")))
         return nextClass();
       if (course) return courseInfo(course, "where");
-      if (ref || has("class", "classes", "schedule", "routine", "timetable", "lecture", "ক্লাস", "রুটিন"))
+      if (ref || has("class", "classes", "schedule", "routine", "timetable", "lecture", "ক্লাস", "রুটিন", "লেকচার", "সময়সূচি"))
         return classesForDay(ref || { dow: todayDow, offset: 0, label: "today" });
 
       return {
